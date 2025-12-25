@@ -1,6 +1,6 @@
 name: dentalapp
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
@@ -12,6 +12,7 @@ dependencies:
   provider: ^6.1.2
   http: ^1.2.1
   shared_preferences: ^2.2.2
+  google_fonts: ^6.3.3
 
 dev_dependencies:
   flutter_test:

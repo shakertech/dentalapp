@@ -8,7 +8,10 @@ class AuthProvider extends ChangeNotifier {
   String? _token;
   Map<String, dynamic>? _user;
 
+  bool _isInitialized = false;
+
   bool get isAuthenticated => _isAuthenticated;
+  bool get isInitialized => _isInitialized;
   Map<String, dynamic>? get user => _user;
 
   Future<void> init() async {
@@ -25,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
         await logout();
       }
     }
+    _isInitialized = true;
     notifyListeners();
   }
 

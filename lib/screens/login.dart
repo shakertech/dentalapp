@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/responsive_provider.dart';
+import '../components/alertDialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,13 +31,24 @@ class _LoginScreenState extends State<LoginScreen> {
       // But typically with Provider auth flow, the AuthWrapper rebuilds.
       // However, if we want to be explicit or if AuthWrapper isn't re-triggering perfectly:
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        AnimatedDialog.show(
+          context,
+          type: DialogType.success,
+          title: 'Success',
+          message: 'Login Successful',
+          onOkPressed: () {
+            Navigator.pushReplacementNamed(context, '/dashboard');
+          },
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        AnimatedDialog.show(
           context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+          type: DialogType.error,
+          title: 'Login Failed',
+          message: e.toString(),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -45,12 +57,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Provider.of<ResponsiveProvider>(
-      context,
-      listen: false,
-    ).update(MediaQuery.of(context).size);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ResponsiveProvider>(
+        context,
+        listen: false,
+      ).update(MediaQuery.of(context).size);
+    });
+
     final responsive = Provider.of<ResponsiveProvider>(context);
     final theme = Theme.of(context);
+    _emailController.text = 'admin@dental.com';
+    _passwordController.text = 'password';
 
     return Scaffold(
       body: Center(
@@ -118,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
             controller: _emailController,
             decoration: InputDecoration(
               labelText: 'Email',
+
               prefixIcon: const Icon(Icons.email_outlined),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),

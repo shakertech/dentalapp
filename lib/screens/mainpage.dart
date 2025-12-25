@@ -3,180 +3,215 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/responsive_provider.dart';
 import '../providers/theme_provider.dart';
+import '../menubar/sidebar.dart';
+import '../menubar/bottombar.dart';
+import 'appointments.dart';
+import 'patients/patients.dart';
 
-class MainPage extends StatelessWidget {
+class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
   @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  int _selectedIndex = 0;
+  void _onItemSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    Provider.of<ResponsiveProvider>(
-      context,
-      listen: false,
-    ).update(MediaQuery.of(context).size);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ResponsiveProvider>(
+        context,
+        listen: false,
+      ).update(MediaQuery.of(context).size);
+    });
+
     final responsive = Provider.of<ResponsiveProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
     final user = auth.user;
 
-    // Mobile/Tablet layout uses Drawer, Desktop uses Row with Sidebar
+    Widget content;
+    switch (_selectedIndex) {
+      case 0:
+        content = _buildDashboard(context, user, responsive.isDesktop);
+        break;
+      case 1:
+        content = const AppointmentsScreen();
+        break;
+      case 2:
+        content = const PatientsScreen();
+        break;
+      case 3:
+        content = const Center(child: Text('More Page'));
+        break;
+      default:
+        content = _buildDashboard(context, user, responsive.isDesktop);
+    }
+
     if (responsive.isDesktop) {
       return Scaffold(
         body: Row(
           children: [
-            _buildSidebar(context),
-            Expanded(child: _buildBody(context, user)),
+            SideBar(
+              selectedIndex: _selectedIndex,
+              onItemSelected: _onItemSelected,
+            ),
+            Expanded(child: content),
           ],
         ),
       );
     } else {
+      final themeProvider = Provider.of<ThemeProvider>(context);
       return Scaffold(
-        appBar: AppBar(title: const Text('Dental Dashboard')),
-        drawer: Drawer(child: _buildSidebarContent(context)),
-        body: _buildBody(context, user),
+        // Remvoed AppBar to allow custom header in dashboard
+        body: SafeArea(child: content),
+        bottomNavigationBar: BottomBar(
+          selectedIndex: _selectedIndex,
+          onItemSelected: _onItemSelected,
+        ),
       );
     }
   }
 
-  Widget _buildSidebar(BuildContext context) {
-    return Container(
-      width: 250,
-      color: Theme.of(context).cardColor,
-      child: _buildSidebarContent(context),
-    );
-  }
-
-  Widget _buildSidebarContent(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  Widget _buildDashboard(
+    BuildContext context,
+    Map<String, dynamic>? user,
+    bool isDesktop,
+  ) {
+    // Grid items data based on DIMS image
+    final List<Map<String, dynamic>> menuItems = [
+      {'title': 'Search', 'icon': Icons.search, 'color': Colors.cyan},
+      {
+        'title': 'Drug By Generic',
+        'icon': Icons.medication,
+        'color': Colors.blue,
+      },
+      {'title': 'Drug By Class', 'icon': Icons.share, 'color': Colors.indigo},
+      {'title': 'Drug By Indication', 'icon': Icons.hub, 'color': Colors.teal},
+      {
+        'title': 'Prescription',
+        'icon': Icons.description,
+        'color': Colors.blueAccent,
+      },
+      {
+        'title': 'Practice Update',
+        'icon': Icons.mobile_friendly,
+        'color': Colors.green,
+      },
+      {'title': 'Guidelines', 'icon': Icons.menu_book, 'color': Colors.teal},
+      {
+        'title': 'Investigation Locator',
+        'icon': Icons.location_on,
+        'color': Colors.indigoAccent,
+      },
+      {'title': 'Diseases', 'icon': Icons.sick, 'color': Colors.cyan},
+    ];
 
     return Column(
       children: [
-        DrawerHeader(
-          child: Center(
-            child: Icon(
-              Icons.medical_services,
-              size: 48,
-              color: Theme.of(context).colorScheme.primary,
+        // Custom Header/Banner
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            gradient: Provider.of<ThemeProvider>(context).primaryGradient,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
             ),
           ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.dashboard),
-          title: const Text('Dashboard'),
-          onTap: () {},
-          selected: true,
-        ),
-        ListTile(
-          leading: const Icon(Icons.people),
-          title: const Text('Patients'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.calendar_today),
-          title: const Text('Appointments'),
-          onTap: () {},
-        ),
-        const Spacer(),
-        ListTile(
-          leading: Icon(
-            themeProvider.themeMode == ThemeMode.light
-                ? Icons.dark_mode
-                : Icons.light_mode,
-          ),
-          title: const Text('Toggle Theme'),
-          onTap: () => themeProvider.toggleTheme(),
-        ),
-        ListTile(
-          leading: const Icon(Icons.logout, color: Colors.red),
-          title: const Text('Logout', style: TextStyle(color: Colors.red)),
-          onTap: () {
-            Provider.of<AuthProvider>(context, listen: false).logout();
-            // AuthWrapper will handle redirection
-          },
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _buildBody(BuildContext context, Map<String, dynamic>? user) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Welcome, ${user?['name'] ?? 'User'}!',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: Provider.of<ResponsiveProvider>(context).isDesktop
-                  ? 3
-                  : 1,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              children: [
-                _buildStatCard(
-                  context,
-                  'Total Patients',
-                  '125',
-                  Icons.people,
-                  Colors.blue,
-                ),
-                _buildStatCard(
-                  context,
-                  'Appointments Today',
-                  '8',
-                  Icons.calendar_today,
-                  Colors.orange,
-                ),
-                _buildStatCard(
-                  context,
-                  'Pending Bills',
-                  '\$4,500',
-                  Icons.attach_money,
-                  Colors.green,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: color),
-            const SizedBox(height: 16),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'DENTAL M.S.',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    onPressed: () {
+                      Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      ).logout();
+                    },
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'Database update on: 24 Dec 25',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
+              ),
+              const SizedBox(height: 20),
+              // Placeholder for the hex/diagram image
+              Container(
+                height: 120,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(Icons.hub, size: 60, color: Colors.white24),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isDesktop ? 6 : 3,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.85,
+            ),
+            itemCount: menuItems.length,
+            itemBuilder: (context, index) {
+              final item = menuItems[index];
+              return Card(
+                elevation: 2,
+                child: InkWell(
+                  onTap: () {},
+                  borderRadius: BorderRadius.circular(12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(item['icon'], size: 32, color: item['color']),
+                      const SizedBox(height: 12),
+                      Text(
+                        item['title'],
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

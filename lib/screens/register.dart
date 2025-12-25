@@ -53,10 +53,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Provider.of<ResponsiveProvider>(
-      context,
-      listen: false,
-    ).update(MediaQuery.of(context).size);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ResponsiveProvider>(
+        context,
+        listen: false,
+      ).update(MediaQuery.of(context).size);
+    });
+
     final theme = Theme.of(context);
 
     return Scaffold(
