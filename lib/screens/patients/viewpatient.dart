@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../components/book_appointment_dialog.dart';
+import 'add_work.dart';
 
 class ViewPatientScreen extends StatefulWidget {
   final Map<String, dynamic> patient;
@@ -53,9 +55,15 @@ class _ViewPatientScreenState extends State<ViewPatientScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
+            icon: const Icon(Icons.add_task, color: Colors.white),
+            tooltip: 'Add Work',
             onPressed: () {
-              // TODO: Edit Patient
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddWorkScreen(patient: widget.patient),
+                ),
+              );
             },
           ),
         ],
@@ -260,7 +268,16 @@ class _ViewPatientScreenState extends State<ViewPatientScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => BookAppointmentDialog(
+                          isReschedule: true,
+                          patientName: widget.patient['name'],
+                          // initialDate: ... (mock logic could parse string)
+                        ),
+                      );
+                    },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.primary,
                       side: BorderSide(color: theme.colorScheme.primary),
@@ -271,7 +288,14 @@ class _ViewPatientScreenState extends State<ViewPatientScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => BookAppointmentDialog(
+                          patientName: widget.patient['name'],
+                        ),
+                      );
+                    },
                     child: const Text('Add New'),
                   ),
                 ),
